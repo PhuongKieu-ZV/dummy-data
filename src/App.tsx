@@ -19,7 +19,7 @@ interface BasePagingRes<T> {
   limit: number;
   skip: number;
   total: number;
-  products: Product[];
+  products: T[];
 }
 
 const limit = 20;
