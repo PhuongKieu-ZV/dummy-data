@@ -6,7 +6,7 @@ interface PropProductItem {
 
 const ProductItem: React.FC<PropProductItem> = (props) => {
   const {
-    product: { thumbnail, title, description }
+    product: { thumbnail, title, description, id }
   } = props;
 
   return (
@@ -18,7 +18,9 @@ const ProductItem: React.FC<PropProductItem> = (props) => {
           <figcaption className='p-4'>
             <p className='text-lg mb-4 font-bold leading-relaxed text-gray-800 dark:text-gray-300'>{title}</p>
 
-            <small className='leading-5 text-gray-500 dark:text-gray-400'>{description}</small>
+            <small className='leading-5 text-gray-500 dark:text-gray-400'>
+              {id} {description}
+            </small>
           </figcaption>
         </figure>
       </a>

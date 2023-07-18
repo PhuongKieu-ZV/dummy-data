@@ -31,38 +31,92 @@ const initialData: BasePagingRes<Product> = {
   products: []
 };
 
+const getDataFromLocalStorage = () => {
+  const dataFromLocalStorage = localStorage.getItem('products');
+  const initialDataProduct = dataFromLocalStorage
+    ? JSON.parse(dataFromLocalStorage)
+    : { prevData: initialData, nextData: initialData, page: 1 };
+
+  return initialDataProduct;
+};
 function App() {
-  const [dataProducts, setDataProducts] = useState<BasePagingRes<Product>>(initialData);
-  const [page, setPage] = useState<number>(1);
-  const [totalProducts, setTotalProducts] = useState<number>(0);
-
-  const getProducts = async (skip: number) => {
-    const { data } = await axios.get('https://dummyjson.com/products', {
-      params: {
-        skip,
-        limit
-      }
-    });
-
-    setDataProducts(data);
-    setTotalProducts(data.total);
-  };
-
-  const skip = useMemo<number>(() => {
-    return (page - 1) * limit;
-  }, [page]);
+  const [dataProducts, setDataProducts] = useState<BasePagingRes<Product>>(() => {
+    const data = getDataFromLocalStorage();
+    return data?.nextData;
+  });
+  const [page, setPage] = useState<number>(() => {
+    const data = getDataFromLocalStorage();
+    return +data.page || 1;
+  });
 
   const totalPages = useMemo<number>(() => {
-    // we suppose that if we have 0 items we want 1 empty page
-    return totalProducts < limit ? 1 : Math.ceil(totalProducts / limit);
-  }, [totalProducts]);
+    return dataProducts.total < limit ? 1 : Math.ceil(dataProducts.total / limit);
+  }, [dataProducts]);
+
+  const fetchProducts = async (page: number) => {
+    const currentPage = page;
+    let prevData = initialData;
+    let nextData = initialData;
+    let skip = 0;
+
+    if (currentPage > 1) {
+      skip = (page - 2) * limit;
+      const { data } = await axios.get('https://dummyjson.com/products', {
+        params: {
+          skip,
+          limit
+        }
+      });
+      prevData = data;
+    }
+
+    if (currentPage < totalPages || currentPage === 1) {
+      skip = page * limit;
+      const { data } = await axios.get('https://dummyjson.com/products', {
+        params: {
+          skip,
+          limit
+        }
+      });
+      nextData = data;
+    }
+
+    const hasDataFromLocalStorage = getDataFromLocalStorage().nextData.products.length > 0;
+
+    if (currentPage === 1 || hasDataFromLocalStorage) {
+      skip = (page - 1) * limit;
+      const { data } = await axios.get('https://dummyjson.com/products', {
+        params: {
+          skip,
+          limit
+        }
+      });
+      setDataProducts(data);
+    }
+
+    localStorage.setItem('products', JSON.stringify({ nextData, prevData, page }));
+  };
 
   React.useEffect(() => {
-    getProducts(skip);
-  }, [skip]);
+    fetchProducts(page);
+  }, [page]);
 
-  const handleNextPage = () => setPage((prev) => prev + 1);
-  const handlePrevPage = () => setPage((prev) => prev - 1);
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleNextPage = () => {
+    scrollToTop();
+    const data = getDataFromLocalStorage();
+    setDataProducts(data.nextData);
+    setPage((prev) => prev + 1);
+  };
+  const handlePrevPage = () => {
+    scrollToTop();
+    const data = getDataFromLocalStorage();
+    setDataProducts(data.prevData);
+    setPage((prev) => prev - 1);
+  };
 
   return (
     <>
