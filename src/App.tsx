@@ -40,14 +40,8 @@ const getDataFromLocalStorage = () => {
   return initialDataProduct;
 };
 function App() {
-  const [dataProducts, setDataProducts] = useState<BasePagingRes<Product>>(() => {
-    const data = getDataFromLocalStorage();
-    return data?.nextData;
-  });
-  const [page, setPage] = useState<number>(() => {
-    const data = getDataFromLocalStorage();
-    return +data.page || 1;
-  });
+  const [dataProducts, setDataProducts] = useState<BasePagingRes<Product>>(initialData);
+  const [page, setPage] = useState<number>(1);
 
   const totalPages = useMemo<number>(() => {
     return dataProducts.total < limit ? 1 : Math.ceil(dataProducts.total / limit);
@@ -81,9 +75,7 @@ function App() {
       nextData = data;
     }
 
-    const hasDataFromLocalStorage = getDataFromLocalStorage().nextData.products.length > 0;
-
-    if (currentPage === 1 || hasDataFromLocalStorage) {
+    if (currentPage === 1) {
       skip = (page - 1) * limit;
       const { data } = await axios.get('https://dummyjson.com/products', {
         params: {
